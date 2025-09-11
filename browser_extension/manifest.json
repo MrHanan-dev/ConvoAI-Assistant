@@ -1,0 +1,74 @@
+{
+  "manifest_version": 3,
+  "name": "AI Conversation Assistant",
+  "version": "1.0.0",
+  "description": "Real-time AI-powered conversation assistant for web meetings",
+  
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "scripting",
+    "webNavigation",
+    "notifications"
+  ],
+  
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "https://teams.microsoft.com/*",
+    "https://zoom.us/*",
+    "https://*.zoom.us/*",
+    "https://app.chime.aws/*",
+    "https://*.webex.com/*"
+  ],
+  
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "https://meet.google.com/*",
+        "https://teams.microsoft.com/*", 
+        "https://zoom.us/*",
+        "https://*.zoom.us/*",
+        "https://app.chime.aws/*",
+        "https://*.webex.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AI Conversation Assistant",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png", 
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["overlay.html", "overlay.js", "styles.css"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  
+  "externally_connectable": {
+    "matches": ["http://localhost:*/*", "https://localhost:*/*"]
+  }
+}
