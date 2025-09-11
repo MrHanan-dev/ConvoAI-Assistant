@@ -162,5 +162,4 @@ MIT License - see LICENSE file for details.
 
 - Documentation: [docs/](./docs/)
 - Issues: GitHub Issues
-- Email: support@ai-assistant.com
-- Discord: [Community Server](https://discord.gg/ai-assistant)
+- Email: muhammadhanan23230@gmail.com
