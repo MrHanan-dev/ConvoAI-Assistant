@@ -96,6 +96,14 @@
 
 3. **Access the Application**
    Open your browser and navigate to `http://localhost:3000`
+<img width="608" height="864" alt="image" src="https://github.com/user-attachments/assets/855b4d32-9296-4951-a344-ec6d83a5e8b4" />
+<img width="608" height="864" alt="image" src="https://github.com/user-attachments/assets/529fb02c-5ef5-4457-add7-38acbf39bc65" />
+<img width="767" height="504" alt="image" src="https://github.com/user-attachments/assets/e5b3868e-7a51-4f78-a516-5d579c4d4402" />
+<img width="1916" height="954" alt="image" src="https://github.com/user-attachments/assets/93c31a56-d489-4734-97bd-80409a4665d7" />
+
+
+
+
 
 ## 🏗️ Architecture
 
