@@ -336,7 +336,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Documentation**: [Wiki](https://github.com/yourusername/convo-ai/wiki)
 - **Issues**: [GitHub Issues](https://github.com/yourusername/convo-ai/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/convo-ai/discussions)
-- **Email**: support@convo-ai.com
+- **Email**: muhammadhanan23230@gmail.com
 
 ## 🔮 Roadmap
 
@@ -361,8 +361,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <div align="center">
   <p>Made with ❤️ by the Convo AI Team</p>
   <p>
-    <a href="https://github.com/yourusername/convo-ai">⭐ Star us on GitHub</a> |
-    <a href="https://twitter.com/convo_ai">🐦 Follow us on Twitter</a> |
-    <a href="https://discord.gg/convo-ai">💬 Join our Discord</a>
+
   </p>
 </div>
