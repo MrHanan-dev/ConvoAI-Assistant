@@ -9,13 +9,13 @@ from collections import defaultdict, deque
 import numpy as np
 from loguru import logger
 
-from app.services.ai_engine import AIEngine
+# from app.services.ai_engine import AIEngine  # Import moved to avoid circular import
 
 
 class ConversationAnalyzer:
     """Real-time conversation analyzer"""
     
-    def __init__(self, ai_engine: AIEngine):
+    def __init__(self, ai_engine):
         self.ai_engine = ai_engine
         self.is_ready = False
         

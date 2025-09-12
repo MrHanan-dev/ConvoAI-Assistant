@@ -29,7 +29,7 @@ class Document(Base):
     content = Column(Text)  # Extracted text content
     embeddings = Column(JSON)  # Vector embeddings
     tags = Column(JSON, default=[])
-    metadata = Column(JSON, default={})
+    document_metadata = Column(JSON, default={})
     is_active = Column(Boolean, default=True, index=True)
     is_processed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
@@ -49,7 +49,7 @@ class Document(Base):
             'mime_type': self.mime_type,
             'file_size': self.file_size,
             'tags': self.tags,
-            'metadata': self.metadata,
+            'metadata': self.document_metadata,
             'is_active': self.is_active,
             'is_processed': self.is_processed,
             'created_at': self.created_at.isoformat() if self.created_at else None,

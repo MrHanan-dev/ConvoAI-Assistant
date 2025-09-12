@@ -7,7 +7,6 @@ import numpy as np
 from typing import List, Dict, Any, Optional
 from sentence_transformers import SentenceTransformer
 import chromadb
-from chromadb.config import Settings as ChromaSettings
 from pinecone import Pinecone
 from loguru import logger
 
@@ -49,19 +48,16 @@ class VectorStore:
     async def _init_chromadb(self):
         """Initialize ChromaDB"""
         try:
-            # Create ChromaDB client
-            self.chroma_client = chromadb.Client(
-                ChromaSettings(
-                    chroma_db_impl="duckdb+parquet",
-                    persist_directory="./chroma_db"
-                )
+            # Create ChromaDB client with new configuration
+            self.chroma_client = chromadb.PersistentClient(
+                path="./chroma_db"
             )
             
             # Get or create collection
             try:
                 self.collection = self.chroma_client.get_collection(self.collection_name)
                 logger.info("Using existing ChromaDB collection")
-            except ValueError:
+            except Exception:
                 self.collection = self.chroma_client.create_collection(
                     name=self.collection_name,
                     metadata={"description": "AI Assistant document embeddings"}

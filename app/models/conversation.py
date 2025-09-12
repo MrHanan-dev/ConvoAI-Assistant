@@ -32,7 +32,7 @@ class Conversation(Base):
     ai_suggestions = Column(JSON, default=[])
     objections_handled = Column(JSON, default=[])
     analytics = Column(JSON, default={})
-    metadata = Column(JSON, default={})
+    conversation_metadata = Column(JSON, default={})
     sentiment_score = Column(Float)
     engagement_score = Column(Float)
     clarity_score = Column(Float)
@@ -61,7 +61,7 @@ class Conversation(Base):
             'ai_suggestions': self.ai_suggestions,
             'objections_handled': self.objections_handled,
             'analytics': self.analytics,
-            'metadata': self.metadata,
+            'metadata': self.conversation_metadata,
             'sentiment_score': self.sentiment_score,
             'engagement_score': self.engagement_score,
             'clarity_score': self.clarity_score,

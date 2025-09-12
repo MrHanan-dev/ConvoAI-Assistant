@@ -4,6 +4,7 @@ Authentication API routes
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from loguru import logger
 
 router = APIRouter()
 

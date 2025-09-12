@@ -9,14 +9,14 @@ from datetime import datetime, timedelta
 from loguru import logger
 import json
 
-from app.services.ai_engine import AIEngine
+# from app.services.ai_engine import AIEngine  # Import moved to avoid circular import
 from app.core.config import settings
 
 
 class AdaptiveTeleprompter:
     """Cluely.ai's signature adaptive teleprompter feature"""
     
-    def __init__(self, ai_engine: AIEngine):
+    def __init__(self, ai_engine):
         self.ai_engine = ai_engine
         self.is_active = False
         

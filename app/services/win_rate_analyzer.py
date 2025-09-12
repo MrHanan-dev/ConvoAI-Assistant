@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from loguru import logger
 import statistics
 
-from app.services.ai_engine import AIEngine
+# from app.services.ai_engine import AIEngine  # Import moved to avoid circular import
 
 
 @dataclass
@@ -28,7 +28,7 @@ class CommunicationMetrics:
 class WinRateAnalyzer:
     """Cluely.ai's win rate analytics engine"""
     
-    def __init__(self, ai_engine: AIEngine):
+    def __init__(self, ai_engine):
         self.ai_engine = ai_engine
         self.conversation_metrics = {}
         self.historical_data = []

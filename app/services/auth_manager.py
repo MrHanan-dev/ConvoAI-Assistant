@@ -2,7 +2,7 @@
 Authentication Manager - JWT-based authentication system
 """
 
-import jwt
+from jose import jwt
 import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any

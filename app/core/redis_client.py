@@ -12,7 +12,7 @@ redis_client = None
 
 
 async def init_redis():
-    """Initialize Redis connection"""
+    """Initialize Redis connection with fallback"""
     global redis_client
     
     try:
@@ -27,8 +27,9 @@ async def init_redis():
         logger.success("Redis initialized successfully!")
         
     except Exception as e:
-        logger.error(f"Failed to initialize Redis: {e}")
-        raise
+        logger.warning(f"Failed to initialize Redis: {e}")
+        logger.info("Continuing without Redis (some features may be limited)")
+        redis_client = None
 
 
 async def get_redis():

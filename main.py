@@ -16,7 +16,7 @@ import sys
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.redis_client import init_redis
-from app.api.routes import api_router
+from app.api.api_routes import api_router
 from app.services.ai_engine import AIEngine
 from app.services.audio_processor import AudioProcessor
 from app.services.conversation_analyzer import ConversationAnalyzer

@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convo AI - Real-time Screen Analysis</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Top Bar - Convo AI Style */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .top-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: auto;
+        }
+
+        .listen-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .listen-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .listen-btn.active {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+        }
+
+        .ask-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            min-width: 200px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .ask-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .ask-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .eye-icon, .menu-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .eye-icon:hover, .menu-icon:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Main Chat Interface */
+        .chat-container {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
+            height: calc(100vh - 200px);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-top: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .ai-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .user-avatar {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            color: white;
+        }
+
+        .message-content {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 70%;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .ai-message .message-content {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .user-message {
+            flex-direction: row-reverse;
+        }
+
+        .user-message .message-content {
+            background: rgba(78, 205, 196, 0.1);
+            border-color: rgba(78, 205, 196, 0.3);
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 8px 8px 8px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .input-container:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .message-input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            padding: 8px 0;
+        }
+
+        .message-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .mic-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .mic-btn.active {
+            animation: pulse 1.5s infinite;
+        }
+
+        .backend-btn {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .backend-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(78, 205, 196, 0.4);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 1;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .copy-btn {
+            background: rgba(78, 205, 196, 0.1);
+            border-color: rgba(78, 205, 196, 0.3);
+        }
+
+        .tell-me-btn {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: rgba(102, 126, 234, 0.3);
+            color: #667eea;
+        }
+
+        /* Screen Analysis Section */
+        .screen-analysis {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .screen-analysis h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .screen-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .screen-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .screen-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .screen-btn.stop {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+
+        .screen-content {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .screen-image-container {
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .screen-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+
+        .screen-status {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .screen-analysis-text {
+            flex: 1;
+        }
+
+        .screen-analysis-text h4 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .analysis-content {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 100px;
+        }
+
+        /* Status Indicators */
+        .status-indicator {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #00ff88;
+            z-index: 999;
+        }
+
+        .status-indicator.error {
+            color: #ff6b6b;
+        }
+
+        .status-indicator.warning {
+            color: #ffa726;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 95%;
+                margin-top: 10px;
+            }
+            
+            .top-controls {
+                gap: 8px;
+            }
+            
+            .ask-input {
+                min-width: 150px;
+            }
+            
+            .screen-content {
+                flex-direction: column;
+            }
+            
+            .screen-image-container {
+                max-width: 100%;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+            <div class="logo">
+                <div class="logo-icon">C</div>
+                <span>Convo AI</span>
+            </div>
+        <div class="top-controls">
+            <button class="listen-btn" id="topListenBtn" onclick="toggleSpeechRecognition()">
+                <span>🎤</span>
+                <span>Listen</span>
+            </button>
+            <input type="text" class="ask-input" placeholder="Ask question" id="topAskInput">
+            <button class="eye-icon" onclick="toggleScreenCapture()" title="Screen View">
+                👁️
+            </button>
+            <button class="menu-icon" title="More options">
+                ⋯
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="status-indicator" id="statusIndicator" style="display: none;">
+        Connected to AI Assistant
+    </div>
+
+    <!-- Main Chat Interface -->
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be added here -->
+        </div>
+        
+        <div class="chat-input-area">
+            <div class="input-container">
+                <input type="text" class="message-input" id="messageInput" placeholder="Tell me more..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" onclick="sendMessage()" title="Send">
+                    ➤
+                </button>
+                <button class="mic-btn" id="micBtn" onclick="toggleSpeechRecognition()" title="Click to speak">
+                    🎤
+                </button>
+                <button class="backend-btn" onclick="testBackendSpeech()" title="Test backend speech recognition">
+                    Backend 🎤
+                </button>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="action-btn tell-me-btn" onclick="askForMoreDetails()">💬 Tell me more...</button>
+                <button class="action-btn" onclick="showSpeechHelp()">🎤 Speech Help</button>
+                <button class="action-btn copy-btn" onclick="copyLastMessage()">📋 Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen Analysis Section -->
+    <div class="screen-analysis" id="screenAnalysis" style="display: none;">
+        <h3>📺 Real-time Screen Analysis</h3>
+        <div class="screen-controls">
+            <button class="screen-btn" onclick="startScreenCapture()" id="startScreenBtn">Start Screen Capture</button>
+            <button class="screen-btn stop" onclick="stopScreenCapture()" id="stopScreenBtn" style="display: none;">Stop Screen Capture</button>
+            <button class="screen-btn" onclick="getScreenAnalysis()">Analyze Screen</button>
+            <button class="screen-btn" onclick="askAboutScreen()">Ask About Screen</button>
+        </div>
+        <div class="screen-content">
+            <div class="screen-image-container">
+                <img id="screenImage" src="" alt="Screen capture" class="screen-image">
+                <div class="screen-status" id="screenStatus">Screen capture not started</div>
+            </div>
+            <div class="screen-analysis-text">
+                <h4>Screen Analysis</h4>
+                <div class="analysis-content" id="screenAnalysisText">No analysis available</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let socket;
+        let isListening = false;
+        let recognition;
+        let isScreenCapturing = false;
+        let screenUpdateInterval;
+        let lastMessage = '';
+
+        // Initialize the application
+        function init() {
+            initSocket();
+            initSpeechRecognition();
+            checkScreenStatus();
+            showStatus('Connected to AI Assistant', 'success');
+            
+            // Add welcome message
+            setTimeout(() => {
+                addMessage('ai', 'Hello! I\'m Convo AI, your intelligent screen analysis assistant. I can see and analyze your screen in real-time. Try asking me "What do you see on my screen?" or click the eye icon to start screen capture.');
+            }, 1000);
+        }
+
+        // Socket.IO initialization
+        function initSocket() {
+            socket = io('http://localhost:8000');
+            
+            socket.on('connect', () => {
+                console.log('Connected to server');
+                showStatus('Connected to AI Assistant', 'success');
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+                showStatus('Disconnected from server', 'error');
+            });
+
+            socket.on('connected', (data) => {
+                console.log('Server response:', data);
+                showStatus(data.message, 'success');
+            });
+
+            socket.on('conversation_started', (data) => {
+                console.log('Conversation started:', data);
+                addMessage('ai', data.message);
+            });
+
+            socket.on('message_analysis', (data) => {
+                console.log('Message analysis:', data);
+            });
+
+            socket.on('ai_response', (data) => {
+                console.log('AI response:', data);
+                addMessage('ai', data.response);
+            });
+
+            socket.on('error', (data) => {
+                console.error('Socket error:', data);
+                showStatus('Error: ' + data.message, 'error');
+            });
+        }
+
+        // Speech Recognition
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = () => {
+                    console.log('Speech recognition started');
+                    isListening = true;
+                    updateSpeechButtons(true);
+                    showStatus('Listening...', 'success');
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    console.log('Speech recognized:', transcript);
+                    
+                    document.getElementById('messageInput').value = transcript;
+                    addMessage('user', transcript);
+                    
+                    // Automatically send to AI
+                    setTimeout(() => {
+                        sendMessage();
+                    }, 1000);
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    isListening = false;
+                    updateSpeechButtons(false);
+                    
+                    let errorMessage = 'Speech recognition error';
+                    switch(event.error) {
+                        case 'not-allowed':
+                            errorMessage = 'Microphone access denied. Please allow microphone access.';
+                            break;
+                        case 'no-speech':
+                            errorMessage = 'No speech detected. Please try again.';
+                            break;
+                        case 'audio-capture':
+                            errorMessage = 'No microphone found. Please check your microphone.';
+                            break;
+                        case 'network':
+                            errorMessage = 'Network error. Please check your connection.';
+                            break;
+                    }
+                    showStatus(errorMessage, 'error');
+                };
+
+                recognition.onend = () => {
+                    console.log('Speech recognition ended');
+                    isListening = false;
+                    updateSpeechButtons(false);
+                };
+            } else {
+                console.warn('Speech recognition not supported');
+                showStatus('Speech recognition not supported in this browser', 'warning');
+            }
+        }
+
+        function toggleSpeechRecognition() {
+            if (!recognition) {
+                showStatus('Speech recognition not available', 'error');
+                return;
+            }
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                try {
+                    recognition.start();
+                } catch (error) {
+                    console.error('Error starting speech recognition:', error);
+                    showStatus('Error starting speech recognition', 'error');
+                }
+            }
+        }
+
+        function updateSpeechButtons(listening) {
+            const micBtn = document.getElementById('micBtn');
+            const topListenBtn = document.getElementById('topListenBtn');
+            
+            if (listening) {
+                micBtn.classList.add('active');
+                topListenBtn.classList.add('active');
+                micBtn.innerHTML = '⏹️';
+                topListenBtn.innerHTML = '<span>⏹️</span><span>Stop</span>';
+            } else {
+                micBtn.classList.remove('active');
+                topListenBtn.classList.remove('active');
+                micBtn.innerHTML = '🎤';
+                topListenBtn.innerHTML = '<span>🎤</span><span>Listen</span>';
+            }
+        }
+
+        // Backend Speech Recognition
+        async function testBackendSpeech() {
+            showStatus('Testing backend speech recognition...', 'success');
+
+            try {
+                const response = await fetch('http://localhost:8000/api/speech/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus(`Backend recognized: "${data.transcribed_text}"`, 'success');
+                    document.getElementById('messageInput').value = data.transcribed_text;
+                    addMessage('user', data.transcribed_text);
+                    addMessage('ai', data.ai_response);
+                } else {
+                    showStatus(`Backend error: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Backend speech test error:', error);
+                showStatus(`Backend test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Message handling
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            addMessage('user', message);
+            lastMessage = message;
+            
+            // Send via Socket.IO
+            socket.emit('user_message', {
+                message: message,
+                timestamp: new Date().toISOString()
+            });
+
+            input.value = '';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function addMessage(type, content) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+
+            const avatar = document.createElement('div');
+            avatar.className = `message-avatar ${type}-avatar`;
+            avatar.textContent = type === 'ai' ? 'C' : 'U';
+
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = content;
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            messagesContainer.appendChild(messageDiv);
+
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Screen Capture Functions
+        function toggleScreenCapture() {
+            const screenAnalysis = document.getElementById('screenAnalysis');
+            if (screenAnalysis.style.display === 'none') {
+                screenAnalysis.style.display = 'block';
+                checkScreenStatus();
+            } else {
+                screenAnalysis.style.display = 'none';
+                if (isScreenCapturing) {
+                    stopScreenCapture();
+                }
+            }
+        }
+
+        async function checkScreenStatus() {
+            try {
+                const response = await fetch('http://localhost:8000/api/screen/status');
+                const data = await response.json();
+                
+                if (data.available) {
+                    document.getElementById('screenStatus').textContent = 
+                        data.is_capturing ? 'Screen capture active' : 'Screen capture ready';
+                    
+                    if (data.is_capturing) {
+                        document.getElementById('startScreenBtn').style.display = 'none';
+                        document.getElementById('stopScreenBtn').style.display = 'inline-block';
+                        isScreenCapturing = true;
+                        startScreenUpdate();
+                    }
+                } else {
+                    document.getElementById('screenStatus').textContent = 'Screen capture not available';
+                }
+            } catch (error) {
+                console.error('Error checking screen status:', error);
+                document.getElementById('screenStatus').textContent = 'Error checking status';
+            }
+        }
+
+        async function startScreenCapture() {
+            try {
+                const response = await fetch('http://localhost:8000/api/screen/start', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('startScreenBtn').style.display = 'none';
+                    document.getElementById('stopScreenBtn').style.display = 'inline-block';
+                    document.getElementById('screenStatus').textContent = 'Screen capture started';
+                    isScreenCapturing = true;
+                    startScreenUpdate();
+                    showStatus('Screen capture started', 'success');
+                } else {
+                    showStatus('Failed to start screen capture', 'error');
+                }
+            } catch (error) {
+                console.error('Error starting screen capture:', error);
+                showStatus('Error starting screen capture', 'error');
+            }
+        }
+
+        async function stopScreenCapture() {
+            try {
+                const response = await fetch('http://localhost:8000/api/screen/stop', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('startScreenBtn').style.display = 'inline-block';
+                    document.getElementById('stopScreenBtn').style.display = 'none';
+                    document.getElementById('screenStatus').textContent = 'Screen capture stopped';
+                    isScreenCapturing = false;
+                    stopScreenUpdate();
+                    showStatus('Screen capture stopped', 'success');
+                } else {
+                    showStatus('Failed to stop screen capture', 'error');
+                }
+            } catch (error) {
+                console.error('Error stopping screen capture:', error);
+                showStatus('Error stopping screen capture', 'error');
+            }
+        }
+
+        function startScreenUpdate() {
+            if (screenUpdateInterval) return;
+            
+            screenUpdateInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('http://localhost:8000/api/screen/image');
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.success && data.image) {
+                            document.getElementById('screenImage').src = data.image;
+                        }
+                    } else {
+                        // If screen capture is not active, stop trying to get images
+                        if (response.status === 400) {
+                            stopScreenUpdate();
+                            document.getElementById('screenStatus').textContent = 'Screen capture not active';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error updating screen image:', error);
+                    // Don't spam errors, just log once
+                    if (!window.screenImageErrorLogged) {
+                        window.screenImageErrorLogged = true;
+                        console.warn('Screen image updates paused due to errors');
+                    }
+                }
+            }, 2000); // Reduced frequency to prevent errors
+        }
+
+        function stopScreenUpdate() {
+            if (screenUpdateInterval) {
+                clearInterval(screenUpdateInterval);
+                screenUpdateInterval = null;
+            }
+        }
+
+        async function getScreenAnalysis() {
+            try {
+                const response = await fetch('http://localhost:8000/api/screen/analysis');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const analysisText = data.summary || 'No analysis available';
+                    document.getElementById('screenAnalysisText').textContent = analysisText;
+                    
+                    // Also update the status to show current analysis
+                    document.getElementById('screenStatus').textContent = 
+                        `Screen capture active - Last analysis: ${new Date().toLocaleTimeString()}`;
+                    
+                    showStatus('Screen analysis updated', 'success');
+                } else {
+                    showStatus('Failed to get screen analysis', 'error');
+                }
+            } catch (error) {
+                console.error('Error getting screen analysis:', error);
+                showStatus('Error getting screen analysis', 'error');
+            }
+        }
+
+        async function askAboutScreen() {
+            const question = prompt('What would you like to know about your screen?');
+            if (!question) return;
+
+            try {
+                const response = await fetch('http://localhost:8000/api/screen/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: question })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessage('user', question);
+                    addMessage('ai', data.ai_response);
+                    showStatus('Screen analysis complete', 'success');
+                } else {
+                    showStatus('Failed to analyze screen', 'error');
+                }
+            } catch (error) {
+                console.error('Error asking about screen:', error);
+                showStatus('Error analyzing screen', 'error');
+            }
+        }
+
+        // Utility functions
+        function showStatus(message, type = 'success') {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.textContent = message;
+            indicator.className = `status-indicator ${type}`;
+            indicator.style.display = 'block';
+            
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        }
+
+        function showSpeechHelp() {
+            const helpText = `
+🎤 Speech Recognition Help
+
+Browser Speech Recognition:
+• Click the red microphone button
+• Allow microphone access when prompted
+• Speak clearly into your microphone
+• Works best in Chrome, Edge, or Safari
+
+Backend Speech Recognition:
+• Click the "Backend 🎤" button
+• Uses server-side speech processing
+• Requires microphone access on your computer
+
+Troubleshooting:
+• If you see "Error starting speech recognition":
+  - Check if microphone is connected
+  - Allow microphone access in browser settings
+  - Try refreshing the page
+  - Use Chrome, Edge, or Safari browser
+
+• If speech recognition doesn't work:
+  - Try the "Backend 🎤" button instead
+  - Check your internet connection
+  - Make sure you're on localhost or HTTPS
+
+• For best results:
+  - Speak clearly and at normal volume
+  - Reduce background noise
+  - Use a good quality microphone
+            `;
+
+            alert(helpText);
+        }
+
+        function copyLastMessage() {
+            if (lastMessage) {
+                navigator.clipboard.writeText(lastMessage).then(() => {
+                    showStatus('Message copied to clipboard', 'success');
+                }).catch(() => {
+                    showStatus('Failed to copy message', 'error');
+                });
+            } else {
+                showStatus('No message to copy', 'warning');
+            }
+        }
+
+        function askForMoreDetails() {
+            const followUpQuestions = [
+                "Can you provide more details about what you see?",
+                "What specific elements are you most interested in?",
+                "Is there anything particular you'd like me to analyze?",
+                "Would you like me to focus on any specific area of the screen?",
+                "Can you tell me more about the current activity?"
+            ];
+            
+            const randomQuestion = followUpQuestions[Math.floor(Math.random() * followUpQuestions.length)];
+            document.getElementById('messageInput').value = randomQuestion;
+            sendMessage();
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

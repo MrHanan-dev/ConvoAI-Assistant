@@ -1,0 +1,14 @@
+[33m1a501da[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m docs: Add comprehensive documentation and analysis
+[33m0f22d77[m backend: Add Node.js backend and application launchers
+[33m953c08c[m extension: Add browser extension for web integration
+[33m1036a67[m desktop: Add desktop application with UI components
+[33md7bf607[m features: Add keyboard shortcuts and mobile companion
+[33m0e3abc5[m tests: Add comprehensive test suite
+[33mf716edc[m api: Add API routes and WebSocket handlers
+[33m3975564[m security: Add compliance manager and authentication system
+[33m895bd43[m integrations: Add platform integrations and notification system
+[33m1b817f5[m analysis: Add conversation analysis and teleprompter services
+[33m03f6abf[m ai: Add AI Engine and Vector Store services
+[33md3af072[m models: Add database models and schemas
+[33m37d355b[m config: Add core configuration and dependencies
+[33m20d5e05[m docs: Add project documentation and core structure

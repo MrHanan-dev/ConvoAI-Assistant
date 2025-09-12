@@ -25,12 +25,33 @@ async def init_db():
     global async_engine, async_session_maker
     
     try:
-        # Create async engine
-        async_engine = create_async_engine(
-            settings.DATABASE_URL.replace('postgresql://', 'postgresql+asyncpg://'),
-            poolclass=NullPool,
-            echo=settings.DEBUG,
-        )
+        # Create async engine with fallback to SQLite
+        database_url = settings.DATABASE_URL
+        
+        # Try to use configured database first
+        if database_url.startswith('postgresql://'):
+            database_url = database_url.replace('postgresql://', 'postgresql+asyncpg://')
+        elif database_url.startswith('sqlite://'):
+            database_url = database_url.replace('sqlite://', 'sqlite+aiosqlite://')
+        
+        try:
+            async_engine = create_async_engine(
+                database_url,
+                poolclass=NullPool,
+                echo=settings.DEBUG,
+            )
+            # Test connection
+            async with async_engine.begin() as conn:
+                pass
+        except Exception as db_error:
+            logger.warning(f"Failed to connect to configured database: {db_error}")
+            logger.info("Falling back to SQLite database...")
+            database_url = "sqlite+aiosqlite:///./ai_assistant.db"
+            async_engine = create_async_engine(
+                database_url,
+                poolclass=NullPool,
+                echo=settings.DEBUG,
+            )
         
         # Create session maker
         async_session_maker = async_sessionmaker(
@@ -46,7 +67,7 @@ async def init_db():
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         
-        logger.success("Database initialized successfully!")
+        logger.success(f"Database initialized successfully! Using: {database_url}")
         
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")

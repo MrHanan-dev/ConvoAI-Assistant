@@ -55,3 +55,9 @@ loguru==0.7.2
 python-dotenv==1.0.0
 pydantic==2.5.2
 pydantic-settings==2.1.0
+
+# Additional dependencies
+redis==5.0.1
+chromadb==0.4.18
+psycopg2-binary==2.9.9
+asyncpg==0.29.0

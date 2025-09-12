@@ -4,7 +4,8 @@ Application configuration settings
 
 import os
 from typing import List, Optional
-from pydantic import BaseSettings, validator
+from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from functools import lru_cache
 
 
@@ -19,17 +20,20 @@ class Settings(BaseSettings):
     PORT: int = 8000
     
     # Security
-    SECRET_KEY: str
+    SECRET_KEY: str = "your-secret-key-here-change-in-production"
+    JWT_SECRET: str = "your-jwt-secret-here"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    ENCRYPTION_KEY: str = "your-encryption-key-here"
+    BCRYPT_ROUNDS: int = 12
     
     # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./ai_assistant.db"
     REDIS_URL: str = "redis://localhost:6379"
     
     # AI Services
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: str = "your-openai-api-key-here"
     ANTHROPIC_API_KEY: Optional[str] = None
     COHERE_API_KEY: Optional[str] = None
     WHISPER_API_KEY: Optional[str] = None
@@ -39,11 +43,15 @@ class Settings(BaseSettings):
     # CRM Integrations
     SALESFORCE_CLIENT_ID: Optional[str] = None
     SALESFORCE_CLIENT_SECRET: Optional[str] = None
+    SALESFORCE_REDIRECT_URI: Optional[str] = None
     HUBSPOT_API_KEY: Optional[str] = None
+    HUBSPOT_CLIENT_ID: Optional[str] = None
+    HUBSPOT_CLIENT_SECRET: Optional[str] = None
     
     # Video Platform Integrations
     ZOOM_API_KEY: Optional[str] = None
     ZOOM_API_SECRET: Optional[str] = None
+    ZOOM_WEBHOOK_SECRET: Optional[str] = None
     TEAMS_CLIENT_ID: Optional[str] = None
     TEAMS_CLIENT_SECRET: Optional[str] = None
     GOOGLE_MEET_CLIENT_ID: Optional[str] = None
@@ -60,18 +68,25 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None
+    SMTP_PASS: Optional[str] = None
     
     # CORS
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001"]
+    FRONTEND_URL: str = "http://localhost:3000"
+    DESKTOP_URL: str = "http://localhost:3001"
     
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_WINDOW: int = 3600  # 1 hour
+    RATE_LIMIT_WINDOW_MS: int = 900000
+    RATE_LIMIT_MAX_REQUESTS: int = 100
     
     # Feature Flags
     ENABLE_CALL_SHADOW_MODE: bool = True
     ENABLE_ENTERPRISE_FEATURES: bool = True
     ENABLE_AUDIO_RECORDING: bool = False  # For privacy compliance
+    ENABLE_MOBILE_APP: bool = False
+    ENABLE_BROWSER_EXTENSION: bool = False
     
     # Audio Processing
     AUDIO_SAMPLE_RATE: int = 16000
@@ -93,7 +108,26 @@ class Settings(BaseSettings):
     MAX_DOCUMENTS_PER_USER: int = 1000
     MAX_CONVERSATIONS_PER_MONTH: int = 500
     
-    @validator("ALLOWED_ORIGINS", pre=True)
+    # Analytics & Monitoring
+    MIXPANEL_TOKEN: Optional[str] = None
+    SENTRY_DSN: Optional[str] = None
+    
+    # WebRTC Configuration
+    TURN_SERVER_URL: Optional[str] = None
+    TURN_SERVER_USERNAME: Optional[str] = None
+    TURN_SERVER_CREDENTIAL: Optional[str] = None
+    
+    # Compliance & Security
+    GDPR_COMPLIANCE: bool = True
+    SOC2_COMPLIANCE: bool = True
+    DATA_RETENTION_DAYS: int = 90
+    AUDIT_LOG_ENABLED: bool = True
+    
+    # Environment
+    NODE_ENV: str = "development"
+    
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v):
         if isinstance(v, str):
             return [i.strip() for i in v.split(",")]
