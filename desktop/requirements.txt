@@ -3,7 +3,7 @@
 # GUI Framework
 customtkinter==5.2.2
 tkinter-tooltip==2.1.0
-pillow==10.1.0
+pillow==10.3.0
 pystray==0.19.4
 
 # Audio Processing
