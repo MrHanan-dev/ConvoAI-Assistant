@@ -21,7 +21,7 @@ numpy==1.24.4
 
 # Networking
 socketio-client==0.7.2
-requests==2.31.0
+requests==2.32.4
 aiohttp==3.9.1
 
 # Utilities
